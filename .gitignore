@@ -1,0 +1,9 @@
+venv/
+.env
+__pycache__/
+*.pyc
+training/Fake.csv
+training/True.csv
+training/processed_data.csv
+training/test_data.pkl
+.DS_Store
