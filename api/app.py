@@ -193,3 +193,11 @@ batch_process()
 if __name__ == '__main__':
     app.run(debug=False)
 
+
+
+from flask import send_from_directory
+
+@app.route('/')
+def serve_frontend():
+    return send_from_directory('../frontend', 'index.html')
+
