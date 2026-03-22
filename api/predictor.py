@@ -12,14 +12,9 @@ tfidf     = joblib.load(os.path.join(MODEL_DIR, 'tfidf_vectorizer.pkl'))
 svm_model = joblib.load(os.path.join(MODEL_DIR, 'svm_model.pkl'))
 rf_model  = joblib.load(os.path.join(MODEL_DIR, 'rf_model.pkl'))
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-import scipy.sparse
 
-test_data_path = os.path.join(MODEL_DIR, 'test_data.pkl')
-X_test_tfidf, y_test = joblib.load(test_data_path)
 
-calibrated_svm = CalibratedClassifierCV(svm_model, cv='prefit')
-calibrated_svm.fit(X_test_tfidf, y_test)
+calibrated_svm = joblib.load(os.path.join(MODEL_DIR, 'calibrated_svm.pkl'))
 
 def clean_text(text):
     text = text.lower()
