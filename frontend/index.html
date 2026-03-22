@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Misinformation Detector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f1117;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #888;
+            font-size: 0.95rem;
+        }
+
+        .card {
+            background: #1e2130;
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 24px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            background: #0f1117;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            padding: 14px;
+            resize: vertical;
+            outline: none;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            border-color: #4f8ef7;
+        }
+
+        button.primary {
+            width: 100%;
+            margin-top: 14px;
+            padding: 14px;
+            background: #4f8ef7;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button.primary:hover {
+            background: #3a7de8;
+        }
+
+        button.primary:disabled {
+            background: #333;
+            cursor: not-allowed;
+        }
+
+        #result-section {
+            display: none;
+        }
+
+        .verdict {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: 4px;
+            padding: 16px 0;
+        }
+
+        .verdict.fake { color: #ff4d4d; }
+        .verdict.real { color: #4dff91; }
+
+        .confidence-label {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .confidence-bar {
+            background: #0f1117;
+            border-radius: 20px;
+            height: 14px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.6s ease;
+            background: #4f8ef7;
+        }
+
+        .confidence-fill.fake { background: #ff4d4d; }
+        .confidence-fill.real { background: #4dff91; }
+
+        .model-breakdown {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .model-badge {
+            background: #0f1117;
+            border-radius: 8px;
+            padding: 10px 18px;
+            text-align: center;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .model-badge .model-name {
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .model-badge .model-verdict {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .model-badge .model-verdict.fake { color: #ff4d4d; }
+        .model-badge .model-verdict.real { color: #4dff91; }
+
+        #feedback-section {
+            display: none;
+        }
+
+        .feedback-label {
+            text-align: center;
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+
+        .feedback-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .feedback-buttons button {
+            padding: 10px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-fake {
+            background: #3a1a1a;
+            color: #ff4d4d;
+            border: 1px solid #ff4d4d;
+        }
+
+        .btn-real {
+            background: #1a3a2a;
+            color: #4dff91;
+            border: 1px solid #4dff91;
+        }
+
+        .btn-fake:hover { background: #ff4d4d; color: white; }
+        .btn-real:hover { background: #4dff91; color: #0f1117; }
+
+        #feedback-message {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #4f8ef7;
+            min-height: 20px;
+        }
+
+        .stats-grid {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: #0f1117;
+            border-radius: 8px;
+            padding: 16px 24px;
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #4f8ef7;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        #loading-msg {
+            text-align: center;
+            color: #4f8ef7;
+            margin-top: 12px;
+            font-size: 0.9rem;
+            min-height: 20px;
+        }
+
+        h2 {
+            font-size: 1rem;
+            color: #aaa;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <header>
+            <h1>🔍 Misinformation Detector</h1>
+            <p>Paste a news article below to check if it's real or fake</p>
+        </header>
+
+       
+        <div class="card">
+            <textarea id="article-input" placeholder="Paste your news article text here..."></textarea>
+            <button class="primary" onclick="analyzeArticle()" id="submit-btn">Analyze Article</button>
+            <div id="loading-msg"></div>
+        </div>
+
+        
+        <div class="card" id="result-section">
+            <h2>Verdict</h2>
+            <div class="verdict" id="verdict-text"></div>
+            <div class="confidence-label" id="confidence-label"></div>
+            <div class="confidence-bar">
+                <div class="confidence-fill" id="confidence-fill" style="width: 0%"></div>
+            </div>
+            <div class="model-breakdown">
+                <div class="model-badge">
+                    <div class="model-name">SVM</div>
+                    <div class="model-verdict" id="svm-result">-</div>
+                </div>
+                <div class="model-badge">
+                    <div class="model-name">Random Forest</div>
+                    <div class="model-verdict" id="rf-result">-</div>
+                </div>
+                <div class="model-badge">
+                    <div class="model-name">Ensemble</div>
+                    <div class="model-verdict" id="ensemble-result">-</div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="card" id="feedback-section">
+            <h2>Was this correct?</h2>
+            <div class="feedback-label">Help us improve by telling us the actual verdict</div>
+            <div class="feedback-buttons">
+                <button class="btn-fake" onclick="submitFeedback('FAKE')">It's FAKE</button>
+                <button class="btn-real" onclick="submitFeedback('REAL')">It's REAL</button>
+            </div>
+            <div id="feedback-message"></div>
+        </div>
+
+        
+        <div class="card">
+            <h2>System Stats</h2>
+            <div class="stats-grid" id="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-number" id="stat-total">-</div>
+                    <div class="stat-label">Total Analyzed</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="stat-fake" style="color: #ff4d4d">-</div>
+                    <div class="stat-label">Fake Articles</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" id="stat-real" style="color: #4dff91">-</div>
+                    <div class="stat-label">Real Articles</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5000';
+        let lastArticleId = null;
+
+        async function analyzeArticle() {
+            const text = document.getElementById('article-input').value.trim();
+
+            if (text.length < 20) {
+                alert('Please paste a longer article (at least 20 characters).');
+                return;
+            }
+
+            const btn = document.getElementById('submit-btn');
+            const loading = document.getElementById('loading-msg');
+            btn.disabled = true;
+            btn.textContent = 'Analyzing...';
+            loading.textContent = 'Running through ML models...';
+
+            document.getElementById('result-section').style.display = 'none';
+            document.getElementById('feedback-section').style.display = 'none';
+            document.getElementById('feedback-message').textContent = '';
+
+            try {
+                const response = await fetch(`${API_URL}/predict`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+
+                const data = await response.json();
+                lastArticleId = data.article_id;
+
+                
+                const verdictEl = document.getElementById('verdict-text');
+                verdictEl.textContent = data.ensemble_result;
+                verdictEl.className = 'verdict ' + data.ensemble_result.toLowerCase();
+
+                
+                const fill = document.getElementById('confidence-fill');
+                fill.style.width = data.confidence + '%';
+                fill.className = 'confidence-fill ' + data.ensemble_result.toLowerCase();
+                document.getElementById('confidence-label').textContent =
+                    `Confidence: ${data.confidence}%`;
+
+                
+                const setResult = (id, val) => {
+                    const el = document.getElementById(id);
+                    el.textContent = val;
+                    el.className = 'model-verdict ' + val.toLowerCase();
+                };
+                setResult('svm-result', data.svm_result);
+                setResult('rf-result', data.rf_result);
+                setResult('ensemble-result', data.ensemble_result);
+
+                document.getElementById('result-section').style.display = 'block';
+                document.getElementById('feedback-section').style.display = 'block';
+
+              
+                loadStats();
+
+            } catch (err) {
+                alert('Error connecting to API. Make sure Flask is running.');
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Analyze Article';
+                loading.textContent = '';
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/stats`);
+                const data = await response.json();
+
+                document.getElementById('stat-total').textContent = data.total;
+
+                let fakeCount = 0, realCount = 0;
+                data.breakdown.forEach(item => {
+                    if (item.verdict === 'FAKE') fakeCount = item.count;
+                    if (item.verdict === 'REAL') realCount = item.count;
+                });
+
+                document.getElementById('stat-fake').textContent = fakeCount;
+                document.getElementById('stat-real').textContent = realCount;
+
+            } catch (err) {
+                console.error('Could not load stats:', err);
+            }
+        }
+
+        async function submitFeedback(verdict) {
+            if (!lastArticleId) return;
+
+            const msg = document.getElementById('feedback-message');
+            msg.textContent = 'Submitting...';
+
+            try {
+                const response = await fetch(`${API_URL}/feedback`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        article_id: lastArticleId,
+                        user_verdict: verdict
+                    })
+                });
+
+                const data = await response.json();
+                msg.textContent = data.correct
+                    ? '✅ Great — the model was correct!'
+                    : '📝 Thanks! Your feedback has been recorded.';
+
+            } catch (err) {
+                msg.textContent = 'Error submitting feedback.';
+                console.error(err);
+            }
+        }
+
+        window.onload = loadStats;
+    </script>
+</body>
+</html>
