@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: smart-misinfo
+    runtime: python
+    pythonVersion: "3.10"
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn api.app:app
+```
